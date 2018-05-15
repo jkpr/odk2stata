@@ -60,37 +60,13 @@ def stata_string_escape(text: str) -> str:
     return f'"{new_text}"'
 
 
-VARNAME_CHARACTERS = set(string.ascii_letters + string.digits + '_')
-
-
-def varname_strip(varname: str) -> str:
-    new_varname = ''.join(i for i in varname if i in VARNAME_CHARACTERS)
-    return new_varname
-
-
-def varname_truncate(varname: str) -> str:
-    if len(varname) > 32:
-        return varname[:32]
-    return varname
-
-
-LabelDefineOption = namedtuple('LabelDefineOption', ['number', 'label'])
-
-
-def label_define_do(varname: str, options_list: List[LabelDefineOption],
-                    replace: bool = False) -> str:
-    options = (' '.join(i) for i in options_list)
-    full_options_list = ' '.join(options)
-    replace_chunk = ', replace' if replace else ''
-    full_do = f'label define {varname} {full_options_list}{replace_chunk}'
-    return full_do
-
-
 def make_invalid_varname_comment(varname: str):
+    """Make a comment about a Stata varname being invalid."""
     return f'* Invalid STATA varname: {varname}'
 
 
 def get_varname_comments(*args):
+    """Make invalid Stata varname comments for many varnames."""
     comments = [make_invalid_varname_comment(i) for i in args if not
                 is_valid_stata_varname(i)]
     return comments

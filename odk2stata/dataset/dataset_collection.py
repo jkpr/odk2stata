@@ -1,13 +1,14 @@
 import string
 
 from .dataset import Dataset
+from .utils import DatasetSource
 from ..odkform import OdkForm
 from ..odkform.survey import SurveyRow
 
 
 class DatasetCollection:
 
-    def __init__(self, odkform: OdkForm, dataset_source: str = 'briefcase'):
+    def __init__(self, odkform: OdkForm, dataset_source: DatasetSource):
         self.odkform = odkform
         self.dataset_source = dataset_source
         primary_filename = self.dataset_filename(odkform, dataset_source)
@@ -28,18 +29,19 @@ class DatasetCollection:
                 self.repeats.append(datasets.pop())
 
     @classmethod
-    def from_file(cls, path: str, dataset_source: str = 'briefcase'):
+    def from_file(cls, path: str, dataset_source: str):
+        source = DatasetSource.from_string(dataset_source)
         odkform = OdkForm(path)
-        return cls(odkform, dataset_source)
+        return cls(odkform, source)
 
     @staticmethod
-    def dataset_filename(odkform: OdkForm, dataset_source: str = 'briefcase',
+    def dataset_filename(odkform: OdkForm, dataset_source: DatasetSource,
                          begin_repeat: SurveyRow = None):
         form_title = odkform.settings.form_title
         filename_uncleaned = form_title
         if begin_repeat is not None:
             filename_uncleaned = f'{filename_uncleaned}_{begin_repeat.row_name}'
-        if dataset_source == 'aggregate':
+        if dataset_source == DatasetSource.AGGREGATE:
             filename_uncleaned = f'{filename_uncleaned}_results'
         filename = DatasetCollection.strip_illegal_chars(filename_uncleaned)
         full_filename = f'{filename}.csv'
@@ -64,8 +66,8 @@ class DatasetCollection:
 class DatasetIter:
 
     def __init__(self, dataset_collection: DatasetCollection):
-        self.primary = dataset_collection.primary.column_iter()
-        self.repeats = [i.column_iter() for i in dataset_collection.repeats]
+        self.primary = iter(dataset_collection.primary)
+        self.repeats = [iter(i) for i in dataset_collection.repeats]
         self.current = [self.primary]
 
     def __iter__(self):

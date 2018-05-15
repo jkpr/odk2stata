@@ -1,7 +1,9 @@
+from collections import namedtuple
+
 from .do_file_section import DoFileSection
 from .drop_column import DropColumn
 from .rename import Rename
-from .stata_utils import (LabelDefineOption, get_varname_comments,
+from .stata_utils import (get_varname_comments,
                           is_valid_stata_varname, label_define_do,
                           make_invalid_varname_comment, safe_stata_string_quote,
                           stata_string_escape)
@@ -11,7 +13,11 @@ from ..dataset.dataset_collection import DatasetCollection
 from ..odkform.choices import ChoiceList
 
 
+LabelDefineOption = namedtuple('LabelDefineOption', ['number', 'label'])
+
+
 ENCODE_SELECT_ONE_UNIT = env.get_template('encode_select_one_unit.do')
+LABEL_DEFINE_UNIT = env.get_template('label_define_unit.do')
 
 
 class EncodeSelectOne(DoFileSection):
@@ -91,7 +97,11 @@ class EncodeSelectOne(DoFileSection):
         # 1d. Combine and make the Stata statement
         list_varname = choice_list.name
         label_defines = self.get_label_define_options(choice_list)
-        full_label_define = label_define_do(list_varname, label_defines)
+        full_label_define = LABEL_DEFINE_UNIT.render(
+            varname=list_varname,
+            options_list=label_defines,
+            replace=False
+        )
         # 1e. Annotate what is an invalid Stata varname
         if not is_valid_stata_varname(list_varname):
             comment = make_invalid_varname_comment(list_varname)
@@ -114,7 +124,11 @@ class EncodeSelectOne(DoFileSection):
     def get_label_replace_do(self, choice_list: ChoiceList):
         list_varname = choice_list.name
         label_defines = self.get_label_replace_options(choice_list)
-        full_label_define = label_define_do(list_varname, label_defines, True)
+        full_label_define = LABEL_DEFINE_UNIT.render(
+            varname=list_varname,
+            options_list=label_defines,
+            replace=True
+        )
         if not is_valid_stata_varname(list_varname):
             comment = make_invalid_varname_comment(list_varname)
             return f'{comment}\n{full_label_define}'

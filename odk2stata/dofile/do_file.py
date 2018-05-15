@@ -11,6 +11,7 @@ from .rename import Rename
 from .split_select_multiple import SplitSelectMultiple
 from .. import __version__
 from ..dataset.dataset_collection import DatasetCollection
+from ..dataset.utils import DatasetSource
 
 
 class DoFile:
@@ -84,8 +85,8 @@ class DoFile:
 class MetaData:
 
     DEFAULT_SETTINGS = {
-        'timestamp_format': '%Y-%m-%d, %H:%M:%S (%z)',
-        'dataset_source': 'briefcase'
+        'timestamp_format': '%Y-%m-%d, %H:%M:%S',
+        'dataset_source': DatasetSource.BRIEFCASE
     }
 
     def __init__(self, dataset_collection: DatasetCollection, settings=None):
