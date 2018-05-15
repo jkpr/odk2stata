@@ -148,10 +148,16 @@ class ImportContext:
         return [i.row_name for i in ancestors]
 
     def update_column_number(self, column: Column):
+        """Update the column number in preparation for the next import.
+
+        Args:
+            column: The column being imported currently.
+        """
         self.column_number += 1
         if column.survey_row.is_gps():
             self.column_number += 3
 
     def __repr__(self):
+        """Get a representation of this object."""
         msg = f'<dataset.ImportContext at column {self.column_number}>'
         return msg

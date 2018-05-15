@@ -1,28 +1,54 @@
-from collections import namedtuple
+"""A collection of useful Stata-related functions.
+
+Module attributes:
+    STATA_VARNAME_REGEX: A regular expression for Stata varnames
+    STATA_VARNAME_REGEX_PROG: A compiled regular expression for Stata
+        varnames based on STATA_VARNAME_REGEX
+    VARNAME_CHARACTERS: The full set of valid Stata varname characters
+    LabelDefineOption: A named tuple with number and label attributes.
+        This is used for encoding select_one variables.
+"""
 import re
 import string
-from typing import List
-
-from ..odkform.survey import SurveyRow
-
-
-StataRow = namedtuple('StataRow', ['stata_varname', 'survey_row'])
-
-
-# TODO - remove all instances of this
-def survey_to_stata_row(survey_row: SurveyRow) -> StataRow:
-    column_name = survey_row.get_column_name()
-    stata_varname = clean_stata_varname(column_name)
-    return StataRow(stata_varname, survey_row)
 
 
 def clean_stata_varname(column_name: str) -> str:
+    """Clean a Stata varname.
+
+    Strip out bad characters first, then truncate to 32 characters.
+
+    Args:
+        column_name: An uncleaned column name
+
+    Returns:
+        A cleaned Stata varname
+    """
     cleaned = varname_strip(column_name)
     truncated = varname_truncate(cleaned)
     return truncated
 
 
+VARNAME_CHARACTERS = set(string.ascii_letters + string.digits + '_')
+
+
+def varname_strip(varname: str) -> str:
+    """Strip out invalid characters from a Stata varname."""
+    new_varname = ''.join(i for i in varname if i in VARNAME_CHARACTERS)
+    return new_varname
+
+
+def varname_truncate(varname: str) -> str:
+    """Truncate a Stata varname down to 32 characters, if needed."""
+    if len(varname) > 32:
+        return varname[:32]
+    return varname
+
+
 def gen_anonymous_varname(column_number: int) -> str:
+    """Generate a Stata varname based on the column number.
+
+    Stata columns are 1-indexed, so add 1 to the column number.
+    """
     return f'v{column_number + 1}'
 
 
@@ -31,21 +57,28 @@ STATA_VARNAME_REGEX_PROG = re.compile(STATA_VARNAME_REGEX)
 
 
 def is_valid_stata_varname(varname: str) -> bool:
+    """Return True if and only if varname is valid in Stata.
+
+    Currently, this function checks against the basic regular
+    expression. In the future, it will check against a list of
+    prohibited Stata varnames, according to Stata documentation.
+    """
     valid = bool(STATA_VARNAME_REGEX_PROG.fullmatch(varname))
     return valid
 
 
-def gen_valid_stata_varname(varname: str) -> str:
-    _varname = varname
-    if _varname and not re.match(_varname[0], '[_a-zA-Z]'):
-        _varname = f'C{_varname}'
-    _varname = ''.join(i for i in _varname if re.match(i, '[_a-zA-Z0-9]'))
-    if len(_varname) > 32:
-        _varname = _varname[:32]
-    return _varname
-
-
 def safe_stata_string_quote(text: str) -> str:
+    """Safely quote a string for Stata.
+
+    Use this when the string should not be changed.
+
+    Args:
+        text: A string for a Stata argument
+
+    Returns:
+        A quoted string. If there is a quotation mark, then we make use
+        of Stata compound quotation marks.
+    """
     if '"' in text:
         # Compound double quotes
         return f"""`"{text}"'"""
@@ -53,6 +86,16 @@ def safe_stata_string_quote(text: str) -> str:
 
 
 def stata_string_escape(text: str) -> str:
+    """Escape a string for Stata.
+
+    Use this when a string needs to be escaped for a single line.
+
+    Args:
+        text: A string for a Stata argument
+
+    Returns:
+        A quoted string.
+    """
     new_text = text
     new_text = new_text.replace('\n', '\\n')
     new_text = new_text.replace('\t', '\\t')
