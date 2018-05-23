@@ -6,11 +6,14 @@ from ..dataset.dataset_collection import DatasetCollection
 from ..dataset.column import Column
 
 
+MAX_LABEL_LEN = 80
+
+
 class LabelVariable(DoFileSection):
 
     DEFAULT_SETTINGS = {
         'first_paragraph_only': False,
-        'remove_numbering': False,
+        'remove_numbering': True,
         'stop_at_words': [],
         'stop_before_words': [],
     }
@@ -44,18 +47,40 @@ class LabelVariable(DoFileSection):
 
     def label_variable_do(self, column: Column):
         varname = self.rename.get_varname(column.stata_varname)
-        label_unquoted = column.survey_row.get_label(self.which_label,
+        label_raw = column.survey_row.get_label(self.which_label,
                                                      self.extra_label)
-        label_cleaned = self.clean_label(label_unquoted)
-        label = stata_string_escape(label_cleaned)
+        label_cleaned = self.clean_label(label_raw)
         if label_cleaned == '':
             return f'* LABEL SKIPPED: variable "{varname}" has no label.'
+        # TODO IMPROVE THIS PART
+        label_truncated = label_cleaned[:MAX_LABEL_LEN]
+        label = stata_string_escape(label_truncated)
         label_variable = f'label var {varname} {label}'
-        if len(label) > 80:
-            msg = (f'* LABEL TOO LONG: label is {len(label)} characters long. '
-                   f'the last {len(label) - 80} characters will be lost.')
+        if len(label_cleaned) > 80:
+            msg = (f'* LABEL TOO LONG: original label is {len(label_cleaned)} characters long. '
+                   f'the last {len(label_cleaned) - 80} characters will be lost.')
             label_variable = f'{msg}\n{label_variable}'
         return label_variable
 
     def clean_label(self, text: str) -> str:
+        new_text = text
+        if self.remove_numbering:
+            new_text = self.get_number_removed(text)
+        return new_text
+
+    @staticmethod
+    def get_number_removed(text: str) -> str:
+        split = text.split(maxsplit=1)
+        if len(split) > 1 and any(ch.isdigit() for ch in split[0]):
+            return split[1]
         return text
+
+    @property
+    def remove_numbering(self):
+        result = self.settings['remove_numbering']
+        return result
+
+    def __repr__(self):
+        """Get a representation of this object."""
+        msg = f"<LabelVariable, size {len(self.label_variables)}>"
+        return msg

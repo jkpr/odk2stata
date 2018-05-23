@@ -3,10 +3,10 @@ from collections import namedtuple
 from .do_file_section import DoFileSection
 from .drop_column import DropColumn
 from .rename import Rename
-from .stata_utils import (get_varname_comments,
-                          is_valid_stata_varname, label_define_do,
+from .stata_utils import (get_varname_comments, is_valid_stata_varname,
                           make_invalid_varname_comment, safe_stata_string_quote,
                           stata_string_escape)
+from .varname_manager import VarnameManager
 from .templates import env
 from ..dataset.column import Column
 from ..dataset.dataset_collection import DatasetCollection
@@ -34,11 +34,13 @@ class EncodeSelectOne(DoFileSection):
     }
 
     def __init__(self, dataset_collection: DatasetCollection,
-                 drop_column: DropColumn, rename: Rename, settings: dict,
+                 drop_column: DropColumn, rename: Rename,
+                 varname_manager: VarnameManager, settings: dict,
                  populate: bool = False):
         self.select_ones = []
         self.drop_column = drop_column
         self.rename = rename
+        self.varname_manager = varname_manager
         super().__init__(dataset_collection, settings, populate)
 
     def populate(self):
@@ -93,9 +95,22 @@ class EncodeSelectOne(DoFileSection):
                 label_replace_do = self.get_label_replace_do(choice_list)
                 yield label_replace_do
 
+    def get_encode_do(self, column: Column):
+        orig = self.rename.get_varname(column.stata_varname)
+        gen = self.varname_manager.get_temp_v2_varname(orig)
+        lab = column.survey_row.choice_list.name
+        comments = get_varname_comments(orig, gen)
+        encode_do = ENCODE_SELECT_ONE_UNIT.render(
+            orig=orig,
+            gen=gen,
+            lab=lab,
+            comments=comments,
+        )
+        return encode_do
+
     def get_label_define_do(self, choice_list: ChoiceList):
         # 1d. Combine and make the Stata statement
-        list_varname = choice_list.name
+        list_varname = self.varname_manager.get_label_varname(choice_list.name)
         label_defines = self.get_label_define_options(choice_list)
         full_label_define = LABEL_DEFINE_UNIT.render(
             varname=list_varname,
@@ -108,21 +123,8 @@ class EncodeSelectOne(DoFileSection):
             return f'{comment}\n{full_label_define}'
         return full_label_define
 
-    def get_encode_do(self, column: Column):
-        orig = self.rename.get_varname(column.stata_varname)
-        gen = f'{orig}v2'
-        lab = column.survey_row.choice_list.name
-        comments = get_varname_comments(orig, gen)
-        encode_do = ENCODE_SELECT_ONE_UNIT.render(
-            orig=orig,
-            gen=gen,
-            lab=lab,
-            comments=comments,
-        )
-        return encode_do
-
     def get_label_replace_do(self, choice_list: ChoiceList):
-        list_varname = choice_list.name
+        list_varname = self.varname_manager.get_label_varname(choice_list.name)
         label_defines = self.get_label_replace_options(choice_list)
         full_label_define = LABEL_DEFINE_UNIT.render(
             varname=list_varname,
@@ -263,5 +265,6 @@ class EncodeSelectOne(DoFileSection):
         return self.settings['label_replace_column']
 
     def __repr__(self):
+        """Get a representation of this object."""
         msg = f'<EncodeSelectOne, size {len(self.select_ones)}>'
         return msg

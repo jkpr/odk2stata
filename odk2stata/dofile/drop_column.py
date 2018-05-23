@@ -7,7 +7,7 @@ from ..dataset.dataset_collection import DatasetCollection
 class DropColumn(DoFileSection):
 
     DEFAULT_SETTINGS = {
-        'types_to_drop': ['note', 'calculate'],
+        'types_to_drop': ['note'],
         'stata_columns_to_drop': [],
         'stata_columns_not_to_drop': [],
     }

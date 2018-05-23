@@ -9,6 +9,7 @@ from .encode_select_one import EncodeSelectOne
 from .label_variable import LabelVariable
 from .rename import Rename
 from .split_select_multiple import SplitSelectMultiple
+from .varname_manager import VarnameManager
 from .. import __version__
 from ..dataset.dataset_collection import DatasetCollection
 from ..dataset.utils import DatasetSource
@@ -20,6 +21,7 @@ class DoFile:
                  settings: dict = None):
         self.dataset_collection = dataset_collection
         self.settings = settings
+        self.varname_manager = VarnameManager()
         metadata_settings = self.settings_section('metadata')
         self.metadata = MetaData(dataset_collection, metadata_settings)
         drop_column_settings = self.settings_section('drop column')
@@ -34,6 +36,7 @@ class DoFile:
         encode_select_one_setings = self.settings_section('encode select one')
         self.encode_select_one = EncodeSelectOne(dataset_collection,
                                                  self.drop_column, self.rename,
+                                                 self.varname_manager,
                                                  encode_select_one_setings,
                                                  populate=True)
         split_select_multiple_setings = self.settings_section(

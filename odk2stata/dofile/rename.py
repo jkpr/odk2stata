@@ -40,6 +40,7 @@ class Rename(DoFileSection):
         # TODO: Fix this. It is a stub
         return varname
 
+
     @property
     def direct_rename(self):
         result = self.settings['direct_rename']
