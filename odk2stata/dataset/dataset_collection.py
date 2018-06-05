@@ -107,6 +107,11 @@ class DatasetCollection:
         result = text.translate({**whitespace_dict, **punctuation_dict})
         return result
 
+    def import_lower(self) -> None:
+        """Change all Stata import varnames to be lower case."""
+        for column in self:
+            column.import_lower()
+
     def __iter__(self):
         """Iterate over the columns of this dataset collection."""
         return DatasetIter(self)

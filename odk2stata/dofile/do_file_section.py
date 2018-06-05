@@ -2,22 +2,19 @@ from abc import ABC, abstractmethod
 
 from ..dataset.column import Column
 from ..dataset.dataset_collection import DatasetCollection
+from ..dataset.utils import DatasetSource
 
 
 class DoFileSection(ABC):
 
-    SOURCE_BRIEFCASE = 'briefcase'
-    SOURCE_AGGREGATE = 'aggregate'
-    SOURCE_NO_GROUPS = 'no_groups'
-    ALLOWED_SOURCES = (SOURCE_BRIEFCASE, SOURCE_AGGREGATE, SOURCE_NO_GROUPS)
-
+    DEFAULT_DATASET_SOURCE = DatasetSource.BRIEFCASE
     DEFAULT_FIRST_LABEL = 'first_label'
     DEFAULT_EXTRA_LABEL = 'o2s_label'
 
     BASE_DEFAULT_SETTINGS = {
         'skip': False,
         'omit': False,
-        'dataset_source': SOURCE_BRIEFCASE,
+        'dataset_source': DEFAULT_DATASET_SOURCE,
         'which_label': DEFAULT_FIRST_LABEL,
         'extra_label': DEFAULT_EXTRA_LABEL,
     }
@@ -74,12 +71,6 @@ class DoFileSection(ABC):
     @property
     def dataset_source(self):
         result = self.settings['dataset_source']
-        if result not in self.ALLOWED_SOURCES:
-            methods = (f'"{i}"' for i in self.ALLOWED_SOURCES)
-            methods = ', '.join(methods)
-            msg = ('Under default section, "dataset_source" '
-                   f'is set to {result}. Please update to be one of {methods}.')
-            raise ValueError(msg)
         return result
 
     @property

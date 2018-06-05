@@ -5,7 +5,8 @@
  *  Author: {{ metadata.author }}
  */
 
-import delimited "{{ metadata.filename_csv }}", charset("utf-8") delimiters(",") case(preserve) stringcols(_all) bindquote(strict)
+import delimited "{{ metadata.filename_csv }}", charset("utf-8") delimiters(",") stringcols(_all) bindquote(strict)
+{%- if metadata.case_preserve %} case(preserve){% endif %}
 
 {% if drop_column.omit is sameas false %}{% include "drop_column.do" %}{% endif %}
 {% if rename.omit is sameas false %}{% include "rename.do" %}{% endif %}

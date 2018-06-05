@@ -29,6 +29,10 @@ class Column:
         self.stata_varname = stata_varname
         self.survey_row = survey_row
 
+    def import_lower(self) -> None:
+        """Change the Stata import varname to be lower case."""
+        self.stata_varname = self.stata_varname.lower()
+
     def __repr__(self):
         """Get a representation of this object."""
         msg = (f'Column({self.column_number}, "{self.dataset_name}", '
