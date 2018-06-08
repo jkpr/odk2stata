@@ -4,14 +4,12 @@ import os.path
 
 from .. import __version__
 from ..dataset.dataset_collection import DatasetCollection
-from ..dataset.utils import DatasetSource
 
 
 class Metadata:
 
     DEFAULT_SETTINGS = {
         'timestamp_format': '%Y-%m-%d, %H:%M:%S',
-        'dataset_source': DatasetSource.BRIEFCASE,
         'case_preserve': True,
     }
 

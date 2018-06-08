@@ -27,3 +27,13 @@ class DatasetError(Exception):
 class DoFileError(Exception):
     """The base exception class for the dofile subpackage."""
     pass
+
+
+class RenameNotApplicableError(Exception):
+    """An exception when trying to apply a rename that doesn't apply."""
+    pass
+
+
+class RenameNotSupportedError(Exception):
+    """An exception when trying to apply a rename that doesn't apply."""
+    pass
