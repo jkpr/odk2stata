@@ -1,10 +1,7 @@
 """A module for handling datasets derived from ODK files."""
-import string
-
 from .dataset import Dataset
 from .utils import DatasetSource
 from ..odkform import OdkForm
-from ..odkform.survey import SurveyRow
 
 
 class DatasetCollection:
@@ -14,8 +11,6 @@ class DatasetCollection:
         odkform: The source ODK form
         dataset_source: From whence the dataset originates
         primary: The primary dataset. This always exists
-        repeats: Datasets created by repeat groups. There is one for
-            each repeat group
     """
 
     def __init__(self, odkform: OdkForm, dataset_source: DatasetSource):
@@ -30,21 +25,40 @@ class DatasetCollection:
         """
         self.odkform = odkform
         self.dataset_source = dataset_source
-        primary_filename = self.dataset_filename(odkform, dataset_source)
-        self.primary = Dataset(primary_filename, dataset_source)
-        self.repeats = []
-        datasets = [self.primary]
+        self.primary = self.odkform_to_dataset(odkform, dataset_source)
+
+    @staticmethod
+    def odkform_to_dataset(odkform: OdkForm, dataset_source: DatasetSource):
+        dataset_stack = []
+        primary_dataset = Dataset(odkform, dataset_source)
+        current_dataset = primary_dataset
         for row in odkform.survey:
             if row.becomes_column():
-                datasets[-1].add_survey_row(row)
-            if row.is_begin_repeat():
-                filename = self.dataset_filename(odkform, dataset_source,
-                                                 begin_repeat=row)
-                repeat_dataset = Dataset(filename, dataset_source,
-                                         begin_repeat=row)
-                datasets.append(repeat_dataset)
+                new_columns = current_dataset.add_next(row)
+                if row.is_begin_repeat():
+                    dataset_stack.append(current_dataset)
+                    new_column = new_columns[0]
+                    new_column.repeat_dataset = Dataset(odkform, dataset_source, begin_repeat=new_column)
+                    current_dataset = new_column.repeat_dataset
             elif row.is_end_repeat():
-                self.repeats.append(datasets.pop())
+                current_dataset = dataset_stack.pop()
+        return primary_dataset
+
+    def merged_iter(self):
+        """Iterate over the columns in merged dataset order.
+
+        Yields:
+            The next Column
+        """
+        yield from self.primary.merged_iter()
+
+    def ordered_iter(self):
+        """Iterate over the columns as in the original ODK ordering.
+
+        Yields:
+            The next Column
+        """
+        yield from self.primary.ordered_iter()
 
     @classmethod
     def from_file(cls, path: str, dataset_source: str):
@@ -65,92 +79,7 @@ class DatasetCollection:
         odkform = OdkForm(path)
         return cls(odkform, source)
 
-    @staticmethod
-    def dataset_filename(odkform: OdkForm, dataset_source: DatasetSource,
-                         begin_repeat: SurveyRow = None) -> str:
-        """Get the name of the CSV dataset.
-
-        Args:
-            odkform: The source ODK form
-            dataset_source: From whence the dataset originates
-            begin_repeat: If the dataset is based on a repeat group,
-                this is the SurveyRow that begins the repeat group
-
-        Returns:
-            The file name, not including any path, of the dataset
-        """
-        form_title = odkform.settings.form_title
-        filename_uncleaned = form_title
-        if begin_repeat is not None:
-            filename_uncleaned = f'{filename_uncleaned}_{begin_repeat.row_name}'
-        if dataset_source == DatasetSource.AGGREGATE:
-            filename_uncleaned = f'{filename_uncleaned}_results'
-        filename = DatasetCollection.strip_illegal_chars(filename_uncleaned)
-        full_filename = f'{filename}.csv'
-        return full_filename
-
-    @staticmethod
-    def strip_illegal_chars(text: str) -> str:
-        """Remove illegal characters.
-
-        This routine mimics the same behavior in ODK Briefcase when it
-        names the resultant dataset file (the .csv output).
-
-        Args:
-            text: Input string
-
-        Returns:
-            A string with illegal characters removed.
-        """
-        whitespace_dict = {ord(i): ' ' for i in string.whitespace}
-        punctuation_dict = {ord(i): '_' for i in string.punctuation}
-        result = text.translate({**whitespace_dict, **punctuation_dict})
-        return result
-
-    def import_lower(self) -> None:
-        """Change all Stata import varnames to be lower case."""
-        for column in self:
-            column.import_lower()
-
-    def __iter__(self):
-        """Iterate over the columns of this dataset collection."""
-        return DatasetIter(self)
-
     def __repr__(self):
         """Get a representation of this object."""
-        msg = (f'DatasetCollection({repr(self.odkform)}, '
-               f'"{self.dataset_source}")')
+        msg = f'DatasetCollection({self.odkform!r}, "{self.dataset_source}")'
         return msg
-
-
-class DatasetIter:
-    """An iterator for all columns of a dataset collection.
-
-    This iterator goes over the primary dataset. If a begin repeat is
-    found, it dives into the columns of that dataset and then returns
-    to the primary dataset.
-    """
-
-    def __init__(self, dataset_collection: DatasetCollection):
-        """Initialize this iterator."""
-        self.primary = iter(dataset_collection.primary)
-        self.repeats = [iter(i) for i in dataset_collection.repeats]
-        self.current = [self.primary]
-
-    def __iter__(self):
-        """Return this iterator."""
-        return self
-
-    def __next__(self):
-        """Get the next column from the dataset collection."""
-        try:
-            col = next(self.current[-1])
-            if col.survey_row.is_begin_repeat():
-                self.current.append(self.repeats.pop(0))
-        except StopIteration:
-            self.current.pop()
-            if self.current:
-                col = next(self.current[-1])
-            else:
-                raise
-        return col

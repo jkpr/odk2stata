@@ -1,5 +1,6 @@
 """A collection of useful dataset-related functions."""
 from enum import Enum
+import string
 from typing import List
 
 
@@ -47,3 +48,21 @@ def get_column_name(row_name: str, ancestors: List[str],
         msg = (f'Dataset source "{dataset_source}" should be one of '
                f'{list(DatasetSource)}')
         raise ValueError(msg)
+
+
+def strip_illegal_chars(text: str) -> str:
+    """Remove illegal characters.
+
+    This routine mimics the same behavior in ODK Briefcase when it
+    names the resultant dataset file (the .csv output).
+
+    Args:
+        text: Input string
+
+    Returns:
+        A string with illegal characters removed.
+    """
+    whitespace_dict = {ord(i): ' ' for i in string.whitespace}
+    punctuation_dict = {ord(i): '_' for i in string.punctuation}
+    result = text.translate({**whitespace_dict, **punctuation_dict})
+    return result
