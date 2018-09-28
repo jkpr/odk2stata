@@ -4,10 +4,11 @@ Module attributes:
     SurveyRow: Subclassing XlsFormRow, this represents a row in survey
     Survey: The class to define the XlsForm survey
 """
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import xlrd.sheet
 
+from .choices import ChoiceList
 from .components import XlsFormRow
 from .components import Worksheet
 from ..error import MismatchedGroupOrRepeatError
@@ -45,7 +46,7 @@ class SurveyRow(XlsFormRow):
         """
         super().__init__(rowx, row_name, row_header, row_values, row_dict)
         self.ancestors = list(ancestors)
-        self.choice_list = None
+        self.choice_list: Optional[ChoiceList] = None
 
     def get_type(self) -> str:
         """Return the survey row type."""
@@ -110,17 +111,25 @@ class SurveyRow(XlsFormRow):
         return is_gps
 
     def is_numeric_type(self):
-        """Return is this a numeric (integer or decimal) type."""
+        """Return is this a numeric type."""
         row_type = self.get_type()
-        is_numeric = row_type in ('decimal', 'integer')
+        is_numeric = row_type in ('decimal', 'integer', 'range')
         return is_numeric
 
     def becomes_column(self):
         """Return if this survey row becomes a column in the dataset."""
         row_type = self.get_type()
-        # "begin repeat" does become a column
+        # Note: "begin repeat" does become a column
         non_columns = ('begin group', 'end group', 'end repeat')
         return row_type not in non_columns
+
+    def becomes_single_column(self):
+        """Return if this survey row becomes a single column."""
+        return self.becomes_column() and not self.is_gps()
+
+    def __hash__(self):
+        """Make a hash based on the row number and the row name."""
+        return hash((self.rowx, self.row_name))
 
     def __repr__(self):
         """Get a representation of this object."""

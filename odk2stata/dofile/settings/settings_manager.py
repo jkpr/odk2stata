@@ -99,6 +99,8 @@ class SettingsManager:
         self.split_select_multiple = {}
         if path:
             self.import_from_file(path)
+        else:
+            self.set_all_to_default()
 
     def set_all_to_empty(self):
         self.default = {}
@@ -111,14 +113,14 @@ class SettingsManager:
         self.split_select_multiple = {}
 
     def set_all_to_default(self):
-        self.default = DoFileSection.BASE_DEFAULT_SETTINGS
-        self.destring = Destring.DEFAULT_SETTINGS
-        self.drop_column = DropColumn.DEFAULT_SETTINGS
-        self.encode_select_one = EncodeSelectOne.DEFAULT_SETTINGS
-        self.label_variable = LabelVariable.DEFAULT_SETTINGS
-        self.metadata = Metadata.DEFAULT_SETTINGS
-        self.rename = Rename.DEFAULT_SETTINGS
-        self.split_select_multiple = SplitSelectMultiple.DEFAULT_SETTINGS
+        self.default = DoFileSection.BASE_DEFAULT_SETTINGS.copy()
+        self.destring = Destring.DEFAULT_SETTINGS.copy()
+        self.drop_column = DropColumn.DEFAULT_SETTINGS.copy()
+        self.encode_select_one = EncodeSelectOne.DEFAULT_SETTINGS.copy()
+        self.label_variable = LabelVariable.DEFAULT_SETTINGS.copy()
+        self.metadata = Metadata.DEFAULT_SETTINGS.copy()
+        self.rename = Rename.DEFAULT_SETTINGS.copy()
+        self.split_select_multiple = SplitSelectMultiple.DEFAULT_SETTINGS.copy()
 
     def import_from_file(self, path):
         config = configparser.ConfigParser(interpolation=None)
@@ -170,6 +172,15 @@ class SettingsManager:
             'split_select_multiple': self.split_select_multiple,
         }
         return result
+
+    def get_case_preserve(self) -> bool:
+        return self.metadata['case_preserve']
+
+    def get_merge_single_repeat(self) -> bool:
+        return self.metadata['merge_single_repeat']
+
+    def get_merge_append(self) -> bool:
+        return self.metadata['merge_append']
 
     @classmethod
     def generate_default_ini(cls, path=None):

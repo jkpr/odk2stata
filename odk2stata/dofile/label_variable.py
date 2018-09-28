@@ -1,9 +1,6 @@
 from .do_file_section import DoFileSection
-from .drop_column import DropColumn
-from .rename import Rename
+from .imported_dataset import ImportedDataset, StataVar
 from .stata_utils import stata_string_escape
-from ..dataset.dataset_collection import DatasetCollection
-from ..dataset.column import Column
 
 
 MAX_LABEL_LEN = 80
@@ -18,37 +15,35 @@ class LabelVariable(DoFileSection):
         'stop_before_words': [],
     }
 
-    def __init__(self, dataset_collection: DatasetCollection, drop_column: DropColumn,
-                 rename: Rename, settings: dict = None, populate: bool = False):
+    def __init__(self, dataset: ImportedDataset, settings: dict = None,
+                 populate: bool = False):
         self.label_variables = []
-        self.drop_column = drop_column
-        self.rename = rename
-        super().__init__(dataset_collection, settings, populate)
+        super().__init__(dataset, settings, populate)
 
     def populate(self):
         self.label_variables.clear()
-        for column in self.dataset_collection:
-            self.analyze_column(column)
+        for var in self.dataset:
+            self.analyze_variable(var)
 
-    def analyze_column(self, column: Column):
-        if self.should_label(column):
-            self.label_variables.append(column)
+    def analyze_variable(self, var: StataVar):
+        if self.should_label(var):
+            self.label_variables.append(var)
 
-    def should_label(self, column: Column):
-        if self.drop_column.is_dropped_column(column):
+    def should_label(self, var: StataVar):
+        if var.is_dropped() or var.column.survey_row is None:
             return False
-        if column.survey_row.becomes_column():
+        if var.column.survey_row.becomes_column():
             return True
         return False
 
     def do_file_iter(self):
-        for column in self.label_variables:
-            yield self.label_variable_do(column)
+        for var in self.label_variables:
+            yield self.label_variable_do(var)
 
-    def label_variable_do(self, column: Column):
-        varname = self.rename.get_varname(column.stata_varname)
-        label_raw = column.survey_row.get_label(self.which_label,
-                                                     self.extra_label)
+    def label_variable_do(self, var: StataVar):
+        varname = var.varname
+        label_raw = var.column.survey_row.get_label(self.which_label,
+                                                    self.extra_label)
         label_cleaned = self.clean_label(label_raw)
         if label_cleaned == '':
             return f'* LABEL SKIPPED: variable "{varname}" has no label.'

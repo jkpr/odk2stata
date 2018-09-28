@@ -1,2 +1,5 @@
+v0.2.0, 1 October 2018
+* Big refactor
+
 v0.1.0, 12 May 2018
 * First release

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from ..dataset.column import Column
-from ..dataset.dataset_collection import DatasetCollection
+from .imported_dataset import ImportedDataset
+from .imported_dataset import StataVar
 from ..dataset.utils import DatasetSource
 
 
@@ -24,13 +24,14 @@ class DoFileSection(ABC):
     def DEFAULT_SETTINGS(self):
         return {}
 
-    def __init__(self, dataset_collection: DatasetCollection,
-                 settings: dict = None, populate: bool = False):
-        self.dataset_collection = dataset_collection
+    def __init__(self, dataset: ImportedDataset, settings: dict = None,
+                 populate: bool = False):
+        self.dataset = dataset
         self.settings = dict(self.BASE_DEFAULT_SETTINGS)
         self.settings.update(self.DEFAULT_SETTINGS)
         if settings:
             self.settings.update(settings)
+        self.on_settings_updated()
         if populate:
             self.populate()
 
@@ -39,11 +40,14 @@ class DoFileSection(ABC):
         pass
 
     @abstractmethod
-    def analyze_column(self, column: Column):
+    def analyze_variable(self, var: StataVar):
         pass
 
     @abstractmethod
     def do_file_iter(self):
+        pass
+
+    def on_settings_updated(self):
         pass
 
     def initialize_settings(self, settings: dict, populate: bool = False):
@@ -75,10 +79,12 @@ class DoFileSection(ABC):
 
     @property
     def which_label(self):
+        """From which column to get labels to use by default."""
         return self.settings['which_label']
 
     @property
     def extra_label(self):
+        """From which column to get labels if they exist."""
         return self.settings['extra_label']
 
 

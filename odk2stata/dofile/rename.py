@@ -1,37 +1,91 @@
 from enum import Enum
 import re
+from typing import List
 
 from .do_file_section import DoFileSection
-from .drop_column import DropColumn
-from .stata_utils import is_valid_stata_varname
-from .stata_utils import VARNAME_CHARACTERS
-from ..dataset.dataset_collection import DatasetCollection
-from ..dataset.column import Column
+from .imported_dataset import ImportedDataset, StataVar
+from .stata_utils import VARNAME_CHARACTERS, is_valid_stata_varname
+from .templates import env
 from ..error import RenameNotApplicableError, RenameNotSupportedError
+
+
+RENAME_ODK_NAME_SECT = env.get_template('rename_odk_name_sect.do')
 
 
 class Rename(DoFileSection):
 
     DEFAULT_SETTINGS = {
         'direct_rename': [],
-        'rename_types': [],
+        'rename_to_odk_name': True
     }
 
-    def __init__(self, dataset_collection: DatasetCollection,
-                 drop_column: DropColumn, settings: dict = None,
-                 populate: bool = False):
-        self.rename_rules = []
-        self.drop_column = drop_column
-        super().__init__(dataset_collection, settings, populate)
+    def __init__(self, dataset: ImportedDataset, settings: dict = None,
+                 populate: bool = True):
+        self.direct_rules: List[RenameRule] = []
+        self.odk_name_rules: List[RenameRule] = []
+        super().__init__(dataset, settings, populate)
+
+    def on_settings_updated(self):
+        rules = self.parse_direct_rename()
+        self.direct_rules.extend(rules)
+
+    def parse_direct_rename(self):
+        rules = []
+        for line in self.direct_rename:
+            split = line.split(maxsplit=1)
+            rule = RenameRule(split[0], split[1])
+            rules.append(rule)
+        return rules
 
     def populate(self):
-        pass
+        self.dataset.set_all_varnames_to_original()
+        self.odk_name_rules.clear()
+        for var in self.dataset:
+            self.analyze_variable(var)
 
-    def analyze_column(self, column: Column):
-        pass
+    def analyze_variable(self, var: StataVar):
+        # Analyzing a variable, we learn if
+        # 1) we need to make a RenameRule back to original odk name
+        # 2) we need to update the varname of the StataVar (based on direct rules)
+        if var.is_dropped() or var.get_odk_name() is None:
+            return
+        if self.rename_to_odk_name:
+            from_single_odk_row = var.from_single_odk_row()
+            imported_name = var.orig_varname
+            # TODO: WORK WITH STATA CLEANED VARNAME
+            cleaned_stata_odk_name = var.get_odk_name()[:32]
+            should_change = imported_name != cleaned_stata_odk_name
+            if from_single_odk_row and should_change:
+                # If renaming to ODK name, then make direct rename rule
+                rule = RenameRule(var.orig_varname, var.get_odk_name())
+                self.odk_name_rules.append(rule)
+                var.set_current_varname(var.get_odk_name())
+        new_name = self.apply_rules(var.varname)
+        var.set_current_varname(new_name)
 
     def do_file_iter(self):
+        if self.rename_to_odk_name:
+            yield
         yield ''
+
+    def apply_rules(self, varname: str) -> str:
+        """Apply rename rules to input varname.
+
+        Args:
+            varname: A Stata varname
+
+        Returns:
+            The varname that would be found in the dataset after
+            applying all rename rules.
+        """
+        current = varname
+        for rule in self.direct_rules:
+            try:
+                current = rule.apply(current)
+            except RenameNotApplicableError:
+                # Current varname after this rule remains the same
+                pass
+        return current
 
     def get_varname(self, varname: str) -> str:
         """Apply rename rules to input varname.
@@ -46,6 +100,11 @@ class Rename(DoFileSection):
         # TODO: Fix this. It is a stub
         return varname
 
+    def rename_to_odk_name_do(self) -> str:
+        result = RENAME_ODK_NAME_SECT.render(
+            odk_name_rules=self.odk_name_rules
+        )
+        return result
 
     @property
     def direct_rename(self):
@@ -53,12 +112,13 @@ class Rename(DoFileSection):
         return result
 
     @property
-    def rename_types(self):
-        result = self.settings['rename_types']
+    def rename_to_odk_name(self):
+        result = self.settings['rename_to_odk_name']
         return result
 
     def __repr__(self):
-        return f'<Rename, size: {len(self.rename_rules)}>'
+        size = len(self.direct_rules) + len(self.odk_name_rules)
+        return f'<Rename, size: {size}>'
 
 
 class RenameRule:

@@ -1,13 +1,12 @@
+# TODO: generated varname should be valid after split
+# TODO: label should be within certain length
 from collections import namedtuple
 from typing import List
 
 from .do_file_section import DoFileSection
-from .drop_column import DropColumn
-from .rename import Rename
+from .imported_dataset import ImportedDataset, StataVar
 from .stata_utils import safe_stata_string_quote, varname_strip
 from .templates import env
-from ..dataset.dataset_collection import DatasetCollection
-from ..dataset.column import Column
 
 
 BinaryLabel = namedtuple('BinaryLabel', ['zero', 'one'])
@@ -40,35 +39,34 @@ class SplitSelectMultiple(DoFileSection):
         'binary_label_name': DEFAULT_LABEL_NAME,
         'choice_lists_to_split': [],
         'choice_lists_not_to_split': [],
-        'stata_columns_to_split': [],
-        'stata_columns_not_to_split': [],
-        'stata_columns_to_append_name': [],
-        'stata_columns_to_append_number': [],
-        'stata_columns_to_name_only': [],
+        'odk_names_to_split': [],
+        'odk_names_not_to_split': [],
+        'odk_names_to_append_name': [],
+        'odk_names_to_append_number': [],
+        'odk_names_to_name_only': [],
     }
 
-    def __init__(self, dataset_collection: DatasetCollection,
-                 drop_column: DropColumn, rename: Rename,
-                 settings: dict = None, populate: bool = False):
-        self.split_multiples = []
-        self.drop_column = drop_column
-        self.rename = rename
-        super().__init__(dataset_collection, settings, populate)
+    def __init__(self, dataset: ImportedDataset, settings: dict = None,
+                 populate: bool = False):
+        self.select_multiples = []
+        super().__init__(dataset, settings, populate)
 
     def populate(self):
-        self.split_multiples.clear()
-        for column in self.dataset_collection:
-            self.analyze_column(column)
+        self.select_multiples.clear()
+        for var in self.dataset:
+            self.analyze_variable(var)
 
-    def analyze_column(self, column: Column):
-        if self.should_split(column):
-            self.split_multiples.append(column)
+    def analyze_variable(self, var: StataVar):
+        if self.should_split(var):
+            self.select_multiples.append(var)
 
-    def should_split(self, column: Column) -> bool:
-        row = column.survey_row
+    def should_split(self, var: StataVar) -> bool:
+        row = var.column.survey_row
+        if row is None:
+            return False
         if not row.is_select_multiple():
             return False
-        elif self.drop_column.is_dropped_column(column):
+        elif var.is_dropped():
             return False
         should_split = True
         if self.default_split_method == self.METHOD_NONE:
@@ -78,34 +76,35 @@ class SplitSelectMultiple(DoFileSection):
             should_split = True
         if choice_list in self.choice_lists_not_to_split:
             should_split = False
-        stata_varname = column.stata_varname
-        if stata_varname in self.stata_columns_to_split:
+        odk_name = var.get_odk_name()
+        if odk_name in self.odk_names_to_split:
             should_split = True
-        if stata_varname in self.stata_columns_not_to_split:
+        if odk_name in self.odk_names_not_to_split:
             should_split = False
         if should_split:
             return should_split
-        if stata_varname in self.stata_columns_to_append_name:
+        if odk_name in self.odk_names_to_append_name:
             should_split = True
-        if stata_varname in self.stata_columns_to_append_number:
+        if odk_name in self.odk_names_to_append_number:
             should_split = True
-        if stata_varname in self.stata_columns_to_name_only:
+        if odk_name in self.odk_names_to_name_only:
             should_split = True
         return should_split
 
     def do_file_iter(self):
         yield self.binary_label_define_do()
-        for column in self.split_multiples:
+        for column in self.select_multiples:
             yield ''
             yield self.split_select_multiple_do(column)
 
-    def get_split_method(self, column: Column) -> str:
+    def get_split_method(self, var: StataVar) -> str:
         split_method = self.default_split_method
-        if column.stata_varname in self.stata_columns_to_append_name:
+        odk_name = var.get_odk_name()
+        if odk_name in self.odk_names_to_append_name:
             split_method = self.METHOD_APPEND_NAME
-        if column.stata_varname in self.stata_columns_to_append_number:
+        if odk_name in self.odk_names_to_append_number:
             split_method = self.METHOD_APPEND_NUMBER
-        if column.stata_varname in self.stata_columns_to_name_only:
+        if odk_name in self.odk_names_to_name_only:
             split_method = self.METHOD_NAME_ONLY
         return split_method
 
@@ -119,10 +118,10 @@ class SplitSelectMultiple(DoFileSection):
                 f'{binary_label[1]}')
         return code
 
-    def split_select_multiple_do(self, column: Column):
-        orig = column.stata_varname
-        padded = f'{orig}v2'
-        varname_name_labels = self.get_varname_name_labels(column)
+    def split_select_multiple_do(self, var: StataVar):
+        orig = var.varname
+        padded = f'{orig}V2'
+        varname_name_labels = self.get_varname_name_labels(var)
         first = varname_name_labels[0].varname
         last = varname_name_labels[-1].varname
         rendered = SPLIT_SELECT_MULTIPLE_UNIT.render(
@@ -135,11 +134,11 @@ class SplitSelectMultiple(DoFileSection):
         )
         return rendered
 
-    def get_varname_name_labels(self, column: Column) \
+    def get_varname_name_labels(self, var: StataVar) \
             -> List[VarnameNameLabel]:
         result = []
-        base_varname = self.rename.get_varname(column.stata_varname)
-        survey_row = column.survey_row
+        base_varname = var.varname
+        survey_row = var.column.survey_row
         prompt_label = survey_row.get_label(self.which_label, self.extra_label)
         choice_list = survey_row.choice_list
         for choice in choice_list:
@@ -197,30 +196,30 @@ class SplitSelectMultiple(DoFileSection):
         return result
 
     @property
-    def stata_columns_to_split(self):
-        result = self.settings['stata_columns_to_split']
+    def odk_names_to_split(self):
+        result = self.settings['odk_names_to_split']
         return result
 
     @property
-    def stata_columns_not_to_split(self):
-        result = self.settings['stata_columns_not_to_split']
+    def odk_names_not_to_split(self):
+        result = self.settings['odk_names_not_to_split']
         return result
 
     @property
-    def stata_columns_to_append_name(self):
-        result = self.settings['stata_columns_to_append_name']
+    def odk_names_to_append_name(self):
+        result = self.settings['odk_names_to_append_name']
         return result
 
     @property
-    def stata_columns_to_append_number(self):
-        result = self.settings['stata_columns_to_append_number']
+    def odk_names_to_append_number(self):
+        result = self.settings['odk_names_to_append_number']
         return result
 
     @property
-    def stata_columns_to_name_only(self):
-        result = self.settings['stata_columns_to_name_only']
+    def odk_names_to_name_only(self):
+        result = self.settings['odk_names_to_name_only']
         return result
 
     def __repr__(self):
-        msg = f'<SplitSelectMultiple, size {len(self.split_multiples)}>'
+        msg = f'<SplitSelectMultiple, size {len(self.select_multiples)}>'
         return msg

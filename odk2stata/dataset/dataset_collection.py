@@ -1,4 +1,6 @@
 """A module for handling datasets derived from ODK files."""
+from typing import List
+
 from .dataset import Dataset
 from .utils import DatasetSource
 from ..odkform import OdkForm
@@ -28,7 +30,17 @@ class DatasetCollection:
         self.primary = self.odkform_to_dataset(odkform, dataset_source)
 
     @staticmethod
-    def odkform_to_dataset(odkform: OdkForm, dataset_source: DatasetSource):
+    def odkform_to_dataset(odkform: OdkForm, dataset_source: DatasetSource) \
+            -> Dataset:
+        """Convert an OdkForm into a Dataset.
+
+        Args:
+            odkform: The source ODK form
+            dataset_source: From whence the dataset originates
+
+        Returns:
+            A Dataset representing the primary dataset
+        """
         dataset_stack = []
         primary_dataset = Dataset(odkform, dataset_source)
         current_dataset = primary_dataset
@@ -38,11 +50,34 @@ class DatasetCollection:
                 if row.is_begin_repeat():
                     dataset_stack.append(current_dataset)
                     new_column = new_columns[0]
-                    new_column.repeat_dataset = Dataset(odkform, dataset_source, begin_repeat=new_column)
+                    new_column.repeat_dataset = Dataset(odkform, dataset_source,
+                                                        begin_repeat=new_column)
                     current_dataset = new_column.repeat_dataset
             elif row.is_end_repeat():
                 current_dataset = dataset_stack.pop()
         return primary_dataset
+
+    def get_repeat_datasets(self) -> List[Dataset]:
+        """Return the repeat Datasets in this collection."""
+        all_datasets = self.get_datasets()
+        return all_datasets[:-1]
+
+    def get_datasets(self) -> List[Dataset]:
+        """Return all Datasets in this collection.
+
+        This includes the primary dataset as the last element.
+
+        Returns:
+            A list of datasets in this collection.
+        """
+        return self.primary.get_datasets()
+
+    def can_merge_single_repeat(self) -> bool:
+        """Return if there a single repeat.
+
+        We can merge a single repeat if there are exactly two datasets.
+        """
+        return len(self.get_datasets()) == 2
 
     def merged_iter(self):
         """Iterate over the columns in merged dataset order.

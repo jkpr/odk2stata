@@ -1,18 +1,33 @@
+{% import 'macros.do' as macros -%}
 /*
  *  Generated using odk2stata.py, version {{ metadata.odk2stata_version }}
  *
+ *  ODK Source: {{ metadata.odk_source_file }}
+ *  Primary CSV dataset: {{ metadata.primary_csv }}
+{% if metadata.is_merged_dataset() -%}
+ *  Secondary CSV dataset: {{ metadata.secondary_csv }}
+{% endif -%}
  *  Date: {{ metadata.date_created }}
  *  Author: {{ metadata.author }}
  */
 
-import delimited "{{ metadata.filename_csv }}", charset("utf-8") delimiters(",") stringcols(_all) bindquote(strict)
-{%- if metadata.case_preserve %} case(preserve){% endif %}
+{% if metadata.is_merged_dataset() -%}
+{{ macros.import_delimited(metadata.secondary_csv, metadata.case_preserve) }}
+save "{{ metadata.secondary_dta }}"
 
-{% if drop_column.omit is sameas false %}{% include "drop_column.do" %}{% endif %}
-{% if rename.omit is sameas false %}{% include "rename.do" %}{% endif %}
-{% if destring.omit is sameas false %}{% include "destring.do" %}{% endif %}
-{% if encode_select_one.omit is sameas false %}{% include "encode_select_one.do" %}{% endif %}
-{% if split_select_multiple.omit is sameas false %}{% include "split_select_multiple.do" %}{% endif %}
-{% if label_variable.omit is sameas false %}{% include "label_variable.do" %}{% endif %}
+{% endif -%}
 
-save "{{ metadata.filename_dta }}"
+{{ macros.import_delimited(metadata.primary_csv, metadata.case_preserve) }}
+
+{%- if metadata.is_merged_dataset() %}
+
+* Give the merge column a unique id where it is missing: _n is the row number
+replace {{ metadata.get_merge_key() }} = string(_n) if {{ metadata.get_merge_key() }} == ""
+merge 1:m {{ metadata.get_merge_key() }} using "{{ metadata.secondary_dta }}"
+* Remove the row numbers that were added in
+replace {{ metadata.get_merge_key() }} = "" if length({{ metadata.get_merge_key() }}) < 13
+{%- endif %}
+
+{% include "cleaning.do" %}
+
+save "{{ metadata.primary_dta }}"

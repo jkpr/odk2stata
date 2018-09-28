@@ -11,6 +11,7 @@ class Dataset:
     """A class to describe a Dataset.
 
     Instance attributes:
+        odkform: The OdkForm from whence this dataset comes
         dataset_filename: The filename for this dataset
         dataset_source: The program that created this dataset
         begin_repeat: If this is a repeat group dataset, then this
@@ -24,16 +25,18 @@ class Dataset:
         """Initialize a Dataset.
 
         Args:
+            odkform: The OdkForm from whence this dataset comes
             dataset_filename: The filename for this dataset
             dataset_source: The program that created this dataset
             begin_repeat: If this is a repeat group dataset, then this
                 attribute is the Column that begins the repeat group
         """
-        self.dataset_filename = self.get_dataset_filename(
-                odkform, dataset_source, begin_repeat
-        )
+        self.odkform = odkform
         self.dataset_source = dataset_source
         self.begin_repeat = begin_repeat
+        self.dataset_filename = self.get_dataset_filename(
+            self.odkform, self.dataset_source, self.begin_repeat
+        )
         self.columns: List[Column] = []
 
         from_briefcase = self.dataset_source == DatasetSource.BRIEFCASE
@@ -158,8 +161,24 @@ class Dataset:
                     break
         return [i.row_name for i in ancestors]
 
-    def merged_iter(self):
-        """Iterate over the columns in merged dataset order.
+    def get_datasets(self) -> list:
+        """Return this dataset and repeat datasets under it.
+
+        This is a depth-first search.
+
+        Returns:
+            A list of Datasets. This dataset is last in the list.
+        """
+        datasets = []
+        for column in self:
+            if column.repeat_dataset is not None:
+                repeats = column.repeat_dataset.get_datasets()
+                datasets.extend(repeats)
+        datasets.append(self)
+        return datasets
+
+    def appended_iter(self):
+        """Iterate over the columns in appended dataset order.
 
         This a recursive method. It descends into associated repeat
         groups as it goes along.
@@ -177,9 +196,9 @@ class Dataset:
             if column.repeat_dataset is not None:
                 repeat_datasets.append(column.repeat_dataset)
         for repeat_dataset in repeat_datasets:
-            yield from repeat_dataset.merged_iter()
+            yield from repeat_dataset.appended_iter()
 
-    def ordered_iter(self):
+    def inserted_iter(self):
         """Iterate over the columns as in the original ODK ordering.
 
         This a recursive method. It descends into associated repeat
@@ -191,7 +210,11 @@ class Dataset:
         for column in self:
             yield column
             if column.repeat_dataset is not None:
-                yield from column.repeat_dataset.ordered_iter()
+                yield from column.repeat_dataset.inserted_iter()
+
+    def is_repeat_dataset(self) -> bool:
+        """Return if this dataset is a repeat dataset."""
+        return self.begin_repeat is not None
 
     def __getitem__(self, key):
         """Return column specified by key."""
