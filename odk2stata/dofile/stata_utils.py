@@ -47,9 +47,9 @@ def varname_truncate(varname: str) -> str:
 def gen_anonymous_varname(column_number: int) -> str:
     """Generate a Stata varname based on the column number.
 
-    Stata columns are 1-indexed, so add 1 to the column number.
+    Stata columns are 1-indexed.
     """
-    return f'v{column_number + 1}'
+    return f'v{column_number}'
 
 
 STATA_VARNAME_REGEX = '[_a-zA-Z][_a-zA-Z0-9]{,31}'

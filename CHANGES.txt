@@ -1,4 +1,8 @@
+v0.2.2, 2 October 2018
+* Fix off-by-one error on variable numbers
+
 v0.2.1, 2 October 2018
+* Remove commas from "foreach" lists in encode select_ones
 
 v0.2.0, 1 October 2018
 * Big refactor
