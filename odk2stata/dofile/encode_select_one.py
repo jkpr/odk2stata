@@ -343,7 +343,7 @@ class EncodeFor:
         intro = f'foreach {stata_var} in '
         intro_width = len(intro)
         wrap_width = width - intro_width
-        joined_varnames = ', '.join((var.varname for var in self.select_ones))
+        joined_varnames = ' '.join((var.varname for var in self.select_ones))
         subsequent = ' ' * intro_width
         wrapped = textwrap.wrap(joined_varnames, width=wrap_width,
                                 initial_indent=intro,
