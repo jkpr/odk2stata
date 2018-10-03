@@ -13,7 +13,7 @@
 
 {% if metadata.is_merged_dataset() -%}
 {{ macros.import_delimited(metadata.secondary_csv, metadata.case_preserve) }}
-save "{{ metadata.secondary_dta }}"
+save "{{ metadata.secondary_dta }}", replace
 
 {% endif -%}
 
@@ -30,4 +30,6 @@ replace {{ metadata.get_merge_key() }} = "" if length({{ metadata.get_merge_key(
 
 {% include "cleaning.do" %}
 
-save "{{ metadata.primary_dta }}"
+local today=c(current_date)
+local date=subinstr("`today'", " ", "", .)
+save "{{ metadata.primary_base }}_`date'.dta", replace

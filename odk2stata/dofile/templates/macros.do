@@ -17,5 +17,5 @@
 
 {% macro import_delimited(filename, case_preserve) -%}
 import delimited "{{ filename }}", charset("utf-8") delimiters(",") stringcols(_all) bindquote(strict)
-{%- if case_preserve %} case(preserve){% endif %}, clear
+{%- if case_preserve %} case(preserve){% endif %} clear
 {%- endmacro %}

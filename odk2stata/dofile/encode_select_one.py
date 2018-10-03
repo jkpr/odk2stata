@@ -48,10 +48,8 @@ class EncodeSelectOne(DoFileSection):
             return False
         if var.is_dropped():
             return False
-        should_encode = False
-        if survey_row.is_select_one():
-            should_encode = self.encode_select_ones
-        elif survey_row.is_select_external():
+        should_encode = self.encode_select_ones
+        if survey_row.is_select_external():
             should_encode = self.encode_external_select_ones
         if survey_row.choice_list.name in self.choice_lists_not_to_encode:
             should_encode = False

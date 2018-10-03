@@ -24,6 +24,7 @@ class Metadata:
             self.settings.update(settings)
         self.odk2stata_version = __version__
         self.odk_source_file = self.dataset.get_odk_source_file()
+        self.primary_base = self.get_primary_base()
         self.primary_csv = self.get_primary_csv()
         self.primary_dta = self.get_primary_dta()
         self.secondary_csv = self.get_secondary_csv()
@@ -46,13 +47,17 @@ class Metadata:
         _, source_file = os.path.split(full_file)
         return source_file
 
+    def get_primary_base(self):
+        filename = self.dataset.primary.dataset_filename
+        base, _ = os.path.splitext(filename)
+        return base
+
     def get_primary_csv(self):
         return self.dataset.primary.dataset_filename
 
     def get_primary_dta(self):
-        csv_filename = self.dataset.primary.dataset_filename
-        path, _ = os.path.splitext(csv_filename)
-        filename_dta = f'{path}.dta'
+        base = self.get_primary_base()
+        filename_dta = f'{base}.dta'
         return filename_dta
 
     def get_secondary_csv(self):

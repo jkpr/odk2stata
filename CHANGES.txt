@@ -1,3 +1,8 @@
+v0.2.3, 3 October 2018
+* Remove comma before clear in "import" statement
+* Add Stata code for date in final "save"
+* Fix encode select_one logic for select_external types
+
 v0.2.2, 2 October 2018
 * Fix off-by-one error on variable numbers
 
