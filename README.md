@@ -3,7 +3,7 @@
 To install `odk2stata` for the first time, run:
 
 ```
-python3 -m pip install https://github.com/jkpr/odk2stata/zipball/master
+python3 -m pip install odk2stata
 ```
 
 ### Upgrade
@@ -11,7 +11,7 @@ python3 -m pip install https://github.com/jkpr/odk2stata/zipball/master
 If you already have `odk2stata` installed, then run:
 
 ```
-python3 -m pip install https://github.com/jkpr/odk2stata/zipball/master --upgrade
+python3 -m pip install odk2stata --upgrade
 ```
 
 # Generate a Stata do file from an XlsForm

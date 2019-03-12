@@ -3,3 +3,6 @@ Jinja2
 pylint
 pycodestyle
 pydocstyle
+twine
+wheel
+
