@@ -1,3 +1,4 @@
+"""A module for handling metadata about XLSForm data and Stata."""
 import datetime
 import getpass
 import os.path
@@ -7,6 +8,11 @@ from ..__version__ import __version__
 
 
 class Metadata:
+    """A class to represent the metadata about data from XLSForms.
+
+    Class attributes:
+        DEFAULT_SETTINGS: The default settings for this section
+    """
 
     DEFAULT_SETTINGS = {
         'author': '',
@@ -18,6 +24,12 @@ class Metadata:
     }
 
     def __init__(self, dataset: ImportedDataset, settings: dict = None):
+        """Initialize this metadata section.
+
+        Args:
+            dataset: The dataset that is produced upon Stata import
+            settings: A settings dictionary to update defaults
+        """
         self.dataset = dataset
         self.settings = dict(self.DEFAULT_SETTINGS)
         if settings:

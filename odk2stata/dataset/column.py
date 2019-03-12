@@ -30,6 +30,9 @@ class Column:
     def based_on_odk_row(self) -> bool:
         return self.survey_row is not None
 
+    def get_survey_row(self) -> SurveyRow:
+        return self.survey_row
+
     def get_odk_type(self):
         if self.survey_row is None:
             return None

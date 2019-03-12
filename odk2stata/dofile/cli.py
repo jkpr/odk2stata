@@ -1,12 +1,25 @@
+"""Module for the command-line interface to odk2stata.
+
+Module functions:
+    cli: Run the command-line interface
+"""
 import argparse
+import sys
 
 from .do_file_collection import DoFileCollection
 
 
 def cli():
     """Run a CLI for this module."""
-    prog_desc = 'Generate a configurable do file from an XlsForm.'
-    parser = argparse.ArgumentParser(description=prog_desc)
+    if '-V' in sys.argv or '--version' in sys.argv:
+        from ..__version__ import __version__
+        print(f'odk2stata v{__version__}')
+        return
+
+    parser = argparse.ArgumentParser(
+        prog='odk2stata',
+        description='Generate a configurable do file from an XlsForm.'
+    )
     parser.add_argument('xlsform', help='The XlsForm to analyze.')
     parser.add_argument('-s', '--settings',
         help='The settings file. If not supplied then sensible default '
@@ -23,6 +36,8 @@ def cli():
     parser.add_argument('-o', '--outpath', help='Where to save the do file. '
                                                 'If not supplied, then the do '
                                                 'file is written to STDOUT.')
+    parser.add_argument('-V', '--version', action='store_true',
+                        help='Print the software version and exit')
     args = parser.parse_args()
     do_file_collection = DoFileCollection.from_file(args.xlsform,
             dataset_source=args.dataset_source, settings_path=args.settings

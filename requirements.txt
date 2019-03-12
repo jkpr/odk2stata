@@ -1,5 +1,5 @@
-xlrd>=1.1.0
-Jinja2>=2.10
-pylint==1.8.4
-pycodestyle==2.4.0
-pydocstyle==2.1.1
+xlrd
+Jinja2
+pylint
+pycodestyle
+pydocstyle

@@ -7,9 +7,7 @@ from .imported_dataset import ImportedDataset, StataVar
 from .stata_utils import (get_varname_comments, is_valid_stata_varname,
                           make_invalid_varname_comment, safe_stata_string_quote,
                           stata_string_escape)
-from .varname_manager import VarnameManager
 from .templates import env
-from ..dataset.column import Column
 from ..odkform.choices import ChoiceList
 
 
@@ -73,8 +71,6 @@ class EncodeSelectOne(DoFileSection):
         # TODO: I don't like this method of getting the do-code
         details = self.get_encode_details()
         yield details.get_encode_select_one_do()
-
-
 
     @property
     def encode_select_ones(self):

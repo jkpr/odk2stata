@@ -1,3 +1,6 @@
+v0.2.4, 4 October 2018
+* Generated split select_multiple variable names now are one line
+
 v0.2.3, 3 October 2018
 * Remove comma before clear in "import" statement
 * Add Stata code for date in final "save"

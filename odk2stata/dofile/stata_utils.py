@@ -24,7 +24,8 @@ def clean_stata_varname(column_name: str) -> str:
         A cleaned Stata varname
     """
     cleaned = varname_strip(column_name)
-    truncated = varname_truncate(cleaned)
+    letter_start = varname_valid_start(cleaned)
+    truncated = varname_truncate(letter_start)
     return truncated
 
 
@@ -37,11 +38,44 @@ def varname_strip(varname: str) -> str:
     return new_varname
 
 
+VARNAME_START_CHARACTERS = set(string.ascii_letters + '_')
+
+
+def varname_valid_start(varname: str) -> str:
+    """Ensure a Stata varname starts with a letter.
+
+    This routine checks the first character of a supplied varname, and
+    if needed, it prepends a 'v' at the beginning and returns.
+
+    A valid first character is in the class [_a-zA-Z].
+    """
+    if varname == '':
+        return 'v'
+    new_varname = varname
+    first_char = new_varname[0]
+    if first_char not in VARNAME_START_CHARACTERS:
+        new_varname = f'v{new_varname}'
+    return new_varname
+
+
+VARNAME_MAX_LEN = 32
+LABEL_MAX_LEN = 80
+
+
 def varname_truncate(varname: str) -> str:
     """Truncate a Stata varname down to 32 characters, if needed."""
-    if len(varname) > 32:
-        return varname[:32]
+    if len(varname) > VARNAME_MAX_LEN:
+        return varname[:VARNAME_MAX_LEN]
     return varname
+
+
+ALPHANUM_CHARACTERS = set(string.ascii_letters + string.digits)
+
+
+def strip_non_alphanum(varname: str) -> str:
+    """Strip out non-alphanumeric characters from a Stata varname."""
+    new_varname = ''.join(i for i in varname if i in ALPHANUM_CHARACTERS)
+    return new_varname
 
 
 def gen_anonymous_varname(column_number: int) -> str:
@@ -50,6 +84,12 @@ def gen_anonymous_varname(column_number: int) -> str:
     Stata columns are 1-indexed.
     """
     return f'v{column_number}'
+
+
+def gen_tmp_varname(varname: str) -> str:
+    """Generate a temporary Stata varname based on a given varname."""
+    stem = varname[:30]
+    return f'{stem}V2'
 
 
 STATA_VARNAME_REGEX = '[_a-zA-Z][_a-zA-Z0-9]{,31}'
@@ -97,8 +137,8 @@ def stata_string_escape(text: str) -> str:
         A quoted string.
     """
     new_text = text
-    new_text = new_text.replace('\n', '\\n')
-    new_text = new_text.replace('\t', '\\t')
+    new_text = new_text.replace('\n', ' ')
+    new_text = new_text.replace('\t', ' ')
     new_text = new_text.replace('"', "'")
     return f'"{new_text}"'
 

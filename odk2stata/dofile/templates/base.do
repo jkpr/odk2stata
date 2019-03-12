@@ -4,9 +4,9 @@
  *
  *  ODK Source: {{ metadata.odk_source_file }}
  *  Primary CSV dataset: {{ metadata.primary_csv }}
-{% if metadata.is_merged_dataset() -%}
+{%- if metadata.is_merged_dataset() %}
  *  Secondary CSV dataset: {{ metadata.secondary_csv }}
-{% endif -%}
+{%- endif %}
  *  Date: {{ metadata.date_created }}
  *  Author: {{ metadata.author }}
  */

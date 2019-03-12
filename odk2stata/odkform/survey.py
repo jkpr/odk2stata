@@ -107,13 +107,20 @@ class SurveyRow(XlsFormRow):
     def is_gps(self):
         """Return is this a geopoint type."""
         row_type = self.get_type()
-        is_gps = row_type == 'geopoint'
+        is_gps = row_type in ('hidden geopoint', 'geopoint')
         return is_gps
 
     def is_numeric_type(self):
         """Return is this a numeric type."""
         row_type = self.get_type()
-        is_numeric = row_type in ('decimal', 'integer', 'range')
+        is_numeric = row_type in (
+            'hidden decimal',
+            'decimal',
+            'hidden integer',
+            'integer',
+            'int',
+            'range',
+        )
         return is_numeric
 
     def becomes_column(self):

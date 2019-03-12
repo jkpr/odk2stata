@@ -6,34 +6,27 @@ Each subpackage has a base exception class.
 
 class OdkFormError(Exception):
     """The base exception class for the odkform subpackage."""
-    pass
 
 
 class MismatchedGroupOrRepeatError(OdkFormError):
     """An exception for parsing group or repeats."""
-    pass
 
 
 class LabelNotFoundError(OdkFormError):
     """An excpetion for determining the label for an XlsFormRow."""
-    pass
 
 
 class DatasetError(Exception):
     """The base exception class for the dataset subpackage."""
-    pass
 
 
 class DoFileError(Exception):
     """The base exception class for the dofile subpackage."""
-    pass
 
 
 class RenameNotApplicableError(Exception):
     """An exception when trying to apply a rename that doesn't apply."""
-    pass
 
 
 class RenameNotSupportedError(Exception):
     """An exception when trying to apply a rename that doesn't apply."""
-    pass

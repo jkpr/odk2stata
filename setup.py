@@ -17,7 +17,7 @@ DESCRIPTION = 'Generate a Stata do file for ODK analysis.'
 URL = 'https://github.com/jkpr/odk2stata'
 EMAIL = 'jpringle@jhu.edu'
 AUTHOR = 'James Pringle'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.7.0'
 VERSION = None
 
 # What packages are required for this module to be executed?
@@ -118,7 +118,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
@@ -126,5 +125,10 @@ setup(
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
+    },
+    entry_points={
+        'console_scripts': [
+            'odk2stata = odk2stata.__main__'
+        ]
     },
 )

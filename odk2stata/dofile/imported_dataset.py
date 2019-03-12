@@ -3,6 +3,7 @@ from typing import Iterator, List, Optional
 from .stata_utils import clean_stata_varname, gen_anonymous_varname
 from ..dataset.dataset import Dataset
 from ..dataset.column import Column
+from ..odkform.survey import SurveyRow
 
 
 class StataVar:
@@ -30,6 +31,9 @@ class StataVar:
 
     def based_on_odk_row(self) -> bool:
         return self.column.based_on_odk_row()
+
+    def get_survey_row(self) -> SurveyRow:
+        return self.column.get_survey_row()
 
     def get_odk_type(self) -> str:
         return self.column.get_odk_type()
