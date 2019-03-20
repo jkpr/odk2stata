@@ -23,7 +23,8 @@ VERSION = None
 # What packages are required for this module to be executed?
 REQUIRED = [
     'xlrd>=1.1.0',
-    'Jinja2>=2.10'
+    'Jinja2>=2.10',
+    'wxpython'
 ]
 
 # What packages are optional?
@@ -119,8 +120,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy'
+        'Programming Language :: Python :: Implementation :: CPython'
     ],
     # $ setup.py publish support.
     cmdclass={
@@ -128,7 +128,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'odk2stata = odk2stata.__main__'
+            'odk2stata=odk2stata.dofile.cli:cli',
+            'odk2stata-gui=odk2stata.gui:create_app',
         ]
     },
 )
