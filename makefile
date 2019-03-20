@@ -12,13 +12,13 @@ lint:
 test:
 	${PYTHON} -m unittest discover -v
 
-dist:
+dist: clean
 	${PYTHON} setup.py sdist bdist_wheel
 
-test-upload:
+test-upload: dist
 	${PYTHON} -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
-upload:
+upload: dist
 	${PYTHON} -m twine upload dist/*
 
 clean:

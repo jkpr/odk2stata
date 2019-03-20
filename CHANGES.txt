@@ -1,3 +1,6 @@
+v0.2.5, 20 March 2019
+* Add code for GUI
+
 v0.2.4, 4 October 2018
 * Generated split select_multiple variable names now are one line
 
