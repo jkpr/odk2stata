@@ -1,0 +1,23 @@
+usage: odk2stata [-h] [-s SETTINGS] [-d {briefcase,aggregate,no_groups}]
+                 [-o OUTPATH] [-V]
+                 xlsform
+
+Generate a configurable do file from an XlsForm.
+
+positional arguments:
+  xlsform               The XlsForm to analyze.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SETTINGS, --settings SETTINGS
+                        The settings file. If not supplied then sensible
+                        default settings are used. Access those with "python3
+                        -m odk2stata.dofile.settings" on the command line.
+  -d {briefcase,aggregate,no_groups}, --dataset_source {briefcase,aggregate,no_groups}
+                        Where does the data come from? The option "no_groups"
+                        is for data where the groups have been stripped out.
+                        Default is "briefcase".
+  -o OUTPATH, --outpath OUTPATH
+                        Where to save the do file. If not supplied, then the
+                        do file is written to STDOUT.
+  -V, --version         Print the software version and exit

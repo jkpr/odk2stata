@@ -1,3 +1,5 @@
+Check out the docs hosted over at [Amazon S3](http://odk2stata-docs.s3-website-us-west-2.amazonaws.com/)
+
 # Installation
 
 To install `odk2stata` for the first time, run:
