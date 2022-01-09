@@ -170,7 +170,7 @@ class ChoiceListTab(Worksheet):
                     row_dict = {k: v for k, v in zip(self.header, row_values)}
                     row_list_name = row_dict['list_name']
                     row_name = row_dict['name']
-                    if row_list_name and row_name:
+                    if str(row_list_name) and str(row_name):
                         choice_row = XlsFormRow(i, row_name, self.header,
                                                 row_values, row_dict)
                         _choices_dict[row_list_name].append(choice_row)
