@@ -22,14 +22,13 @@ VERSION = None
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'xlrd>=1.1.0',
+    'xlrd<=2.0.0',
     'Jinja2>=2.10',
-    'wxpython'
 ]
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'gui': ['wxpython'],
 }
 
 # The rest you shouldn't have to touch too much :)

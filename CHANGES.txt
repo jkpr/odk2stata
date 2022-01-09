@@ -1,3 +1,6 @@
+v0.2.6, 8 January 2022
+* When parsing choices, keep choice lists and names if the string is not empty.
+
 v0.2.5, 20 March 2019
 * Add code for GUI
 

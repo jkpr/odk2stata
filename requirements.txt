@@ -1,7 +1,6 @@
-xlrd
+xlrd<=2.0.0
 Jinja2
 pylint
-wxpython
 pycodestyle
 pydocstyle
 twine
